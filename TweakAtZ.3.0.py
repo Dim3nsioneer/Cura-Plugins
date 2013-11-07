@@ -13,14 +13,13 @@
 
 ## Written by Steven Morlock, smorloc@gmail.com
 ## Modified by Ricardo Gomez, ricardoga@otulook.com, to add Bed Temperature and make it work with Cura_13.06.04+
-## Modified by Stefan Heule, scinfi@gmx.net, to add re-activation of plugin if executed by pre-printing G-command changing z position (V2.0+), add flow rate (V3.0+)
+## Modified by Stefan Heule, Dim3nsioneer@gmx.ch, to add Flow Rate, restoration of initial values when returning to low Z, extended stage numbers, direct stage manipulation by GCODE-comments
 ## This script is licensed under the Creative Commons - Attribution - Share Alike (CC BY-SA) terms
 
 # Uses -
 # M220 S<factor in percent> - set speed factor override percentage
+# M221 S<factor in percent> - set flow factor override percentage
 # M104 S<temp> T<0-#toolheads> - set extruder <T> to target temperature <S>
-
-# TODO:
 # M140 S<temp> - set bed target temperature
 
 version = 3.0
