@@ -1,4 +1,4 @@
-#Name: Tweak At Z 3.1.2/IEF
+#Name: Tweak At Z 3.1.2
 #Info: Change printing parameters at a given height
 #Help: TweakAtZ
 #Depend: GCode
@@ -6,9 +6,7 @@
 #Param: targetZ(float:5.0) Z height to tweak at (mm)
 #Param: targetL(int:) (ALT) Layer no. to tweak at
 #Param: speed(int:) New Speed (%)
-#Param: flowrate(int:) New General Flow Rate (%)
-#Param: flowrateone(int:) New Flow Rate Extruder 1 (%)
-#Param: flowratetwo(int:) New Flow Rate Extruder 2 (%)
+#Param: flowrate(int:) New Flow Rate (%)
 #Param: platformTemp(int:) New Bed Temp (deg C)
 #Param: extruderOne(int:) New Extruder 1 Temp (deg C)
 #Param: extruderTwo(int:) New Extruder 2 Temp (deg C)
@@ -23,7 +21,6 @@
 # Uses -
 # M220 S<factor in percent> - set speed factor override percentage
 # M221 S<factor in percent> - set flow factor override percentage
-# M221 S<factor in percent> T<0-#toolheads> - set flow factor override percentage for single extruder
 # M104 S<temp> T<0-#toolheads> - set extruder <T> to target temperature <S>
 # M140 S<temp> - set bed target temperature
 # M106 S<PWM> - set fan speed to target speed <S>
@@ -33,9 +30,8 @@
 #V3.1:   Recognizes UltiGCode and deactivates value reset, fan speed added, alternatively layer no. to tweak at, extruder three temperature disabled by '#Ex3'
 #V3.1.1: Bugfix reset flow rate
 #V3.1.2: Bugfix disable TweakAtZ on Cool Head Lift
-#V3.1.2/IEF: Flow rate for individual extruder (IEF=individual extruder flow) added 
 
-version = '3.1.2/IEF'
+version = '3.1.2'
 
 import re
 
@@ -61,8 +57,6 @@ with open(filename, "r") as f:
 
 old_speed = 100
 old_flowrate = 100
-old_flowrateOne = 100
-old_flowrateTwo = 100
 old_platformTemp = -1
 old_extruderOne = -1
 old_extruderTwo = -1
@@ -117,14 +111,7 @@ with open(filename, "w") as f:
                 if 'M106' in line and state < 3: #looking for fan speed
                         old_fanSpeed = getValue(line, 'S', old_fanSpeed)
                 if 'M221' in line and state < 3: #looking for flow rate
-                        tmp_extruder = getValue(line,'T',None)
-                        if tmp_extruder == None: #check if extruder is specified
-                                old_flowrate = getValue(line, 'S', old_flowrate)
-                        else:
-                                if tmp_extruder == 0: #first extruder
-                                        old_flowrateOne = getValue(line, 'S', old_flowrateOne)
-                                if tmp_extruder == 1: #second extruder
-                                        old_flowrateOne = getValue(line, 'S', old_flowrateOne)
+                        old_flowrate = getValue(line, 'S', old_flowrate)
 		if 'G1' in line or 'G0' in line:
 			newZ = getValue(line, 'Z', z)
 			x = getValue(line, 'X', None)
@@ -143,10 +130,6 @@ with open(filename, "w") as f:
 						f.write("M220 S%f\n" % float(speed))
 					if flowrate is not None and flowrate != '':
 						f.write("M221 S%f\n" % float(flowrate))
-					if flowrateOne is not None and flowrateOne != '':
-						f.write("M221 T0 S%f\n" % float(flowrateOne))
-					if flowrateTwo is not None and flowrateTwo != '':
-						f.write("M221 T1 S%f\n" % float(flowrateTwo))
 					if platformTemp is not None and platformTemp != '':
 						f.write("M140 S%f\n" % float(platformTemp))
 					if extruderOne is not None and extruderOne != '':
@@ -168,10 +151,6 @@ with open(filename, "w") as f:
                                                         f.write("M220 S%f\n" % float(old_speed))
                                                 if flowrate is not None and flowrate != '':
                                                         f.write("M221 S%f\n" % float(old_flowrate))
-                                                if flowrateOne is not None and flowrateOne != '':
-                                                        f.write("M221 T0 S%f\n" % float(old_flowrateOne))
-                                                if flowrateTwo is not None and flowrateTwo != '':
-                                                        f.write("M221 T1 S%f\n" % float(old_flowrateTwo))
                                                 if platformTemp is not None and platformTemp != '':
                                                         f.write("M140 S%f\n" % float(old_platformTemp))
                                                 if extruderOne is not None and extruderOne != '':
