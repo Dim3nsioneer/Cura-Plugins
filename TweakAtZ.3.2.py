@@ -7,8 +7,8 @@
 #Param: targetL(int:) (ALT) Layer no. to tweak at
 #Param: speed(int:) New Speed (%)
 #Param: flowrate(int:) New General Flow Rate (%)
-#Param: flowrateone(int:) New Flow Rate Extruder 1 (%)
-#Param: flowratetwo(int:) New Flow Rate Extruder 2 (%)
+#Param: flowrateOne(int:) New Flow Rate Extruder 1 (%)
+#Param: flowrateTwo(int:) New Flow Rate Extruder 2 (%)
 #Param: platformTemp(int:) New Bed Temp (deg C)
 #Param: extruderOne(int:) New Extruder 1 Temp (deg C)
 #Param: extruderTwo(int:) New Extruder 2 Temp (deg C)
@@ -33,7 +33,7 @@
 #V3.1:   Recognizes UltiGCode and deactivates value reset, fan speed added, alternatively layer no. to tweak at, extruder three temperature disabled by '#Ex3'
 #V3.1.1: Bugfix reset flow rate
 #V3.1.2: Bugfix disable TweakAtZ on Cool Head Lift
-#V3.2:   Flow rate for specific extruder added (only for 2 extruders), bugfix parser
+#V3.2:   Flow rate for specific extruder added (only for 2 extruders), bugfix parser, added speed reset at the end of the print
 
 version = '3.2'
 
@@ -85,7 +85,8 @@ except:
 
 with open(filename, "w") as f:
 	for line in lines:
-		f.write(line)
+		if not ('M84' in line or 'M25' in line):
+                        f.write(line)
                 if 'FLAVOR:UltiGCode' in line: #Flavor is UltiGCode! No reset of values
                         no_reset = 1
                 if ';TweakAtZ-state' in line: #checks for state change comment
@@ -125,6 +126,11 @@ with open(filename, "w") as f:
                                         old_flowrateOne = getValue(line, 'S', old_flowrateOne)
                                 if tmp_extruder == 1: #second extruder
                                         old_flowrateOne = getValue(line, 'S', old_flowrateOne)
+                if ('M84' in line or 'M25' in line):
+                        if state>0 and speed is not None and speed != '': #'finish' commands for UM Original and UM2
+                                f.write("M220 S100 ; speed reset to 100% at the end of print\n");
+                                f.write("M117                     \n")
+                        f.write(line)
 		if 'G1' in line or 'G0' in line:
 			newZ = getValue(line, 'Z', z)
 			x = getValue(line, 'X', None)
@@ -137,8 +143,10 @@ with open(filename, "w") as f:
 					state = 3
                                         if targetL_i > -100000:
                                                 f.write(";TweakAtZ V%s: executed at Layer %d\n" % (version,targetL_i))
+                                                f.write("M117 Printing... tw@L%4d\n" % targetL_i)
                                         else:
                                                 f.write(";TweakAtZ V%s: executed at %1.2f mm\n" % (version,targetZ))
+                                                f.write("M117 Printing... tw@%5.1f\n" % targetZ)
 					if speed is not None and speed != '':
 						f.write("M220 S%f\n" % float(speed))
 					if flowrate is not None and flowrate != '':
