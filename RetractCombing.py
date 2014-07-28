@@ -1,4 +1,4 @@
-#Name: Retract while combing V14.01
+#Name: Retract while combing V14.07
 #Info: Retracts at specified height during combing
 #Help: RetractWhileCombing
 #Depend: GCode
@@ -15,7 +15,7 @@
 ## Written by Stefan Heule, Dim3nsioneer@gmx.ch
 ## This script is licensed under the Creative Commons - Attribution - Non-commercial - Share Alike (CC BY-NC-SA) terms
 
-version = '14.01'
+version = '14.07'
 
 import re
 import math
@@ -64,25 +64,28 @@ pos_type = 0 #Type of positioning: 0=absolute, 1=relative
 buffered_gcode = []
 total_length = 0
 g1speed = 0
-flavor = 0 #0:RepRap GCode, 1:UltiGCode
+flavor = 0 #0:RepRap GCode, 1:UltiGCode, 2: RepRap volumetric
 
 with open(filename, "w") as f:
-        f.write(";This GCODE was altered by RetractCombing V%s\n" % version)
+        #f.write(";This GCODE was altered by RetractCombing V%s\n" % version) #additional code line broke proper functionality on UM2
+        for line in lines:
+                if 'FLAVOR:UltiGCode' in line: #Flavor is UltiGCode! Use G10 and G11 instead of G1 Ex
+                        flavor = 1
+                if ('G10' in line or 'G11' in line) and flavor == 0: #Flavor is volumetric RepRap
+                        flavor = 2
 	for line in lines:
                 oldx = x
                 oldy = y
                 oldz = z
                 olde = e
                 gtype = getValue(line,'G',None)
-                if 'FLAVOR:UltiGCode' in line: #Flavor is UltiGCode! Use G10 and G11 instead of G1 Ex
-                        flavor = 1
                 if 'LAYER:' in line: #new layer no. found
                         layer = getValue(line, 'LAYER:', layer)
                         if minL_i > -100000: #target selected by layer no.
                                 if in_range == 0 and layer >= minL_i and layer <= maxL_i: #determine minZ from layer no.
                                         minZ = z + 0.001
-                                if in_range == 1 and layer >= maxL_i: #determine maxZ from layer no.
-                                        maxZ = z 
+                                if in_range == 1 and layer > maxL_i: #determine maxZ from layer no.
+                                        maxZ = z
                 if gtype == 90: #look for G90 command (absolute positioning)
                         pos_type = 0
                 if gtype == 91: #look for G91 command (relative positioning)
@@ -108,7 +111,7 @@ with open(filename, "w") as f:
                                 if total_length >= minDist:
                                         if flavor == 0: #RepRap
                                                 f.write("G1 F%d E%1.5f; added by RetractCombing V%s\n" % (int(speed*60),(1-pos_type)*olde-retractdistance,version)) #retract
-                                        else: #UltiGCode
+                                        else: #UltiGCode or volumetric RepRap
                                                 f.write("G10; added by RetractCombing V%s\n" % version) #retract
                                         if lift != 0:
                                                 f.write("G0 Z%1.2f; added by RetractCombing V%s\n" % (float((1-pos_type)*z+lift),version)) #lift head
@@ -120,7 +123,7 @@ with open(filename, "w") as f:
                                         if flavor == 0: #RepRap
                                                 f.write("G1 F%d E%1.5f; added by RetractCombing V%s\n" % (int(speed*60),(1-pos_type)*olde,version)) #priming
                                                 f.write("G1 F%d; added by RetractCombing V%s\n" % (int(g1speed),version))
-                                        else: #UltiGCode
+                                        else: #UltiGCode or volumetric RepRap
                                                 f.write("G11; added by RetractCombing V%s\n" % version) #priming
                                 else:
                                         for buffer_line in buffered_gcode: #writes the buffer
