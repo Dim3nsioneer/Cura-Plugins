@@ -1,4 +1,4 @@
-#Name: Retract while combing V15.02
+#Name: Retract while combing V15.06
 #Info: Retracts at specified height during combing
 #Help: RetractWhileCombing
 #Depend: GCode
@@ -20,8 +20,9 @@
 ## V14.01: initial version
 ## V14.07: including flavor 'RepRap volumetric'
 ## V15.02: bugfix for dunking into priming heap at start, progress bar included, First-and-last-layer-option
+## V15.06: uses Cura progress bar instead of its own
 
-version = '15.02'
+version = '15.06'
 
 import re
 import math
@@ -64,15 +65,6 @@ if minL_i > -100000 and maxL_i == -100000: #if only starting layer is specified
 if minL_i > -100000:
 	minZ = maxZ = 100000
 
-if Publisher is not None:
-	if FirstLast == 1:
-		wx.CallAfter(Publisher().sendMessage, "pluginupdate", "OpenPluginProgressWindow;RetractWhileCombing;Retract While Combing plugin is executed on first and last layer")
-	else:
-		if minL_i > -100000:
-			wx.CallAfter(Publisher().sendMessage, "pluginupdate", "OpenPluginProgressWindow;RetractWhileCombing;Retract While Combing plugin is executed between Layers %d and %d" % (minL_i,maxL_i))
-		else:
-			wx.CallAfter(Publisher().sendMessage, "pluginupdate", "OpenPluginProgressWindow;RetractWhileCombing;Retract While Combing plugin is executed between %1.2fmm and %1.2fmm" % (minZ,maxZ))
-
 with open(filename, "r") as f:
 	lines = f.readlines()
 
@@ -97,14 +89,17 @@ NoOfLayers = 1
 
 with open(filename, "w") as f:
 	for line in lines:
-		if int(i*100/l) > lastpercentage and Publisher is not None: #progressbar
-			lastpercentage = int(i*100/l)
-			wx.CallAfter(Publisher().sendMessage, "pluginupdate", "Progress;" + str(lastpercentage))
 		if 'FLAVOR:UltiGCode' in line: #Flavor is UltiGCode! Use G10 and G11 instead of G1 Ex
 			flavor = 1
 		if ('G10' in line or 'G11' in line) and flavor == 0: #Flavor is volumetric RepRap
 			flavor = 2
 	for line in lines:
+		if int(i*100/l) > lastpercentage and (Publisher is not None): #progressbar
+			lastpercentage = int(i*100/l)
+			if minL_i > -100000:
+				wx.CallAfter(Publisher().sendMessage, "pluginupdate", ("RetractWC Layer %d" % minL_i) + ";" + str(lastpercentage))
+			else:
+				wx.CallAfter(Publisher().sendMessage, "pluginupdate", ("RetractWC %1.2f" % minZ) + "mm;" + str(lastpercentage))
 		oldx = x
 		oldy = y
 		oldz = z
@@ -184,7 +179,4 @@ with open(filename, "w") as f:
 			total_length += math.sqrt((x-oldx)*(x-oldx)+(y-oldy)*(y-oldy)) #calculates distance
 		else:
 			f.write(line)
-if Publisher is not None:
-	wx.CallAfter(Publisher().sendMessage, "pluginupdate", "Progress;100")
-	time.sleep(1)
-	wx.CallAfter(Publisher().sendMessage, "pluginupdate", "ClosePluginProgressWindow")
+		i+=1
