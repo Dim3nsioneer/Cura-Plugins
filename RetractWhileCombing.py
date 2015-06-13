@@ -1,4 +1,4 @@
-#Name: Retract while combing V15.06
+#Name: Retract while combing V15.06.1
 #Info: Retracts at specified height during combing
 #Help: RetractWhileCombing
 #Depend: GCode
@@ -17,12 +17,13 @@
 ## This script is licensed under the Creative Commons - Attribution - Non-commercial - Share Alike (CC BY-NC-SA) terms
 
 ## Changelog:
-## V14.01: initial version
-## V14.07: including flavor 'RepRap volumetric'
-## V15.02: bugfix for dunking into priming heap at start, progress bar included, First-and-last-layer-option
-## V15.06: uses Cura progress bar instead of its own
+## V14.01:   initial version
+## V14.07:   including flavor 'RepRap volumetric'
+## V15.02:   bugfix for dunking into priming heap at start, progress bar included, First-and-last-layer-option
+## V15.06:   uses Cura progress bar instead of its own
+## V15.06.1: bugfix for failure on cold head lift together with first/last option and small last layer
 
-version = '15.06'
+version = '15.06.1'
 
 import re
 import math
@@ -142,6 +143,10 @@ with open(filename, "w") as f:
 			else:
 				in_range = 0
 		if in_range == 1:
+                        if ';Small layer' in line: #de-activate plugin during cold head lift
+                                combing_active = -1
+                        if combing_active == -1 and gtype == 4: #reactivate plugin after cold head lift
+                                combing_active = 0
 			if combing_active == 0 and gtype == 0: #activate flag for combing
 				combing_active = 1
 			if combing_active == 1 and gtype == 1: #deactivate flag for combing
