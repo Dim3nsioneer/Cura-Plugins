@@ -45,6 +45,7 @@
 ##V4.0.1: Bugfix for doubled G1 commands
 ##V4.0.2: uses Cura progress bar instead of its own
 ##V4.0.3: added coolheadlift support, also added support for tweaks at first (0) layer
+##V4.0.4: Bugfix for fall back after one layer and doubled G0 commands when using print speed tweak
 version = '4.0.4'
 
 import re
@@ -140,7 +141,7 @@ with open(filename, "w") as file:
 		if ';Layer count:' in line:
 			TWinstances += 1
 			file.write(';TweakAtZ instances: %d\n' % TWinstances)
-		if not ('M84' in line or 'M25' in line or ('G1' in line and TweakPrintSpeed and state==3) or
+		if not ('M84' in line or 'M25' in line or ('G1' in line and TweakPrintSpeed and (state==3 or state==4)) or
 						';TweakAtZ instances:' in line):
 			file.write(line)
 		IsUM2 = ('FLAVOR:UltiGCode' in line) or IsUM2 #Flavor is UltiGCode!
@@ -195,9 +196,9 @@ with open(filename, "w") as file:
 			y = getValue(line, 'Y', None)
 			e = getValue(line, 'E', None)
 			f = getValue(line, 'F', None)
-			if TweakPrintSpeed and state==3:
+			if 'G1' in line and TweakPrintSpeed and (state==3 or state==4):
 				# check for pure print movement in target range:
-				if 'G1' in line and x != None and y != None and f != None and e != None and newZ==z:
+				if x != None and y != None and f != None and e != None and newZ==z:
 					file.write("G1 F%d X%1.3f Y%1.3f E%1.5f\n" % (int(f/100.0*float(printspeed)),getValue(line,'X'),
 																  getValue(line,'Y'),getValue(line,'E')))
 				else: #G1 command but not a print movement
