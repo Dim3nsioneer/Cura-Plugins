@@ -4,7 +4,10 @@ Cura-Plugins
 Modified and new Cura Plugins (authorship Dim3nsioneer)
 
 'Released' branch:
-This branch contains the currently released versions
+This branch contains the currently released versions for Cura 2.x
+
+'Legacy' branch:
+This branch contains the released versions for legacy Cura
 
 'Old versions' branch:
 This branch contains old versions of the Cura plugins. Be aware of bugs in this section!
