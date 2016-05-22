@@ -8,7 +8,7 @@
 # Written by Steven Morlock, smorloc@gmail.com
 # Modified by Ricardo Gomez, ricardoga@otulook.com, to add Bed Temperature and make it work with Cura_13.06.04+
 # Modified by Stefan Heule, Dim3nsioneer@gmx.ch since V3.0 (see changelog below)
-# Modified by Jaime van Kessel (Ultimaker), j.vankessel@ultimaker.com to make it work for 15.10
+# Modified by Jaime van Kessel (Ultimaker), j.vankessel@ultimaker.com to make it work for 15.10 / 2.x
 
 ##history / changelog:
 ##V3.0.1: TweakAtZ-state default 1 (i.e. the plugin works without any TweakAtZ comment)
@@ -29,6 +29,7 @@
 ##V4.9.93: Minor bugfixes (input settings) / documentation
 ##V4.9.94: Bugfix Combobox-selection; remove logger
 ##V5.0:   Bugfix for fall back after one layer and doubled G0 commands when using print speed tweak, Initial version for Cura 2.x
+##V5.0.1: Bugfix for calling unknown property 'bedTemp' of previous settings storage and unkown variable 'speed'
 
 ## Uses -
 ## M220 S<factor in percent> - set speed factor override percentage
@@ -44,7 +45,7 @@ from ..Script import Script
 import re
 
 class TweakAtZ(Script):
-    version = "5.0"
+    version = "5.0.1"
     def __init__(self):
         super().__init__()
 
@@ -348,7 +349,7 @@ class TweakAtZ(Script):
              "extruderTwo": self.getSettingValueByKey("i4_extruderTwo"),
              "fanSpeed": self.getSettingValueByKey("j2_fanSpeed")}
         old = {"speed": -1, "flowrate": -1, "flowrateOne": -1, "flowrateTwo": -1, "platformTemp": -1, "extruderOne": -1,
-            "extruderTwo": -1, "fanSpeed": -1, "state": -1}
+            "extruderTwo": -1, "bedTemp": -1, "fanSpeed": -1, "state": -1}
         twLayers = self.getSettingValueByKey("d_twLayers")
         if self.getSettingValueByKey("c_behavior") == "single_layer":
             behavior = 1
@@ -432,7 +433,7 @@ class TweakAtZ(Script):
                     elif tmp_extruder == 1: #second extruder
                         old["flowrateOne"] = self.getValue(line, "S", old["flowrateOne"])
                 if ("M84" in line or "M25" in line):
-                    if state>0 and speed is not None and speed != "": #"finish" commands for UM Original and UM2
+                    if state>0 and TweakProp["speed"]: #"finish" commands for UM Original and UM2
                         modified_gcode += "M220 S100 ; speed reset to 100% at the end of print\n"
                         modified_gcode += "M117                     \n"
                     modified_gcode += line + "\n"
